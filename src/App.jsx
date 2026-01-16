@@ -141,19 +141,45 @@ function App() {
               <p className="text-xs font-bold text-gray-500">카카오 농도</p>
               <span className="text-sm font-extrabold text-[#4E342E]">{cacao < 45 ? 'MILK' : `${cacao}%`}</span>
             </div>
-            <input
-              type="range"
-              min="33"
-              max="100"
-              step="1"
-              value={cacao}
-              onChange={(e) => setCacao(Number(e.target.value))}
-              className="w-full h-2 bg-gradient-to-r from-[#4E342E] to-[#FFCC80] rounded-full appearance-none cursor-pointer"
-              dir="rtl"
-            />
-            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>진함 100%</span>
-              <span>부드러움 33%</span>
+
+            {/* Slider with Tick Marks */}
+            <div className="relative pb-6">
+              <input
+                type="range"
+                min="33"
+                max="100"
+                step="1"
+                value={cacao}
+                onChange={(e) => {
+                  let val = Number(e.target.value);
+                  // Magnetic snap: 70 (70.5%) and 57 (57.9%)
+                  if (val >= 68 && val <= 72) val = 70;
+                  else if (val >= 55 && val <= 59) val = 57;
+                  setCacao(val);
+                }}
+                className="w-full h-2 bg-gradient-to-r from-[#4E342E] to-[#FFCC80] rounded-full appearance-none cursor-pointer relative z-10"
+                dir="rtl"
+              />
+
+              {/* Tick marks - below slider, pointing down */}
+              <div className="absolute top-2 left-0 right-0 pointer-events-none">
+                {/* 70% tick → position: (100-70)/(100-33) = 44.78% */}
+                <div className="absolute flex flex-col items-center" style={{ left: '44.78%', transform: 'translateX(-50%)' }}>
+                  <div className="w-px h-3 bg-black/70"></div>
+                  <span className="text-[9px] font-medium text-gray-600 mt-0.5">70.5%</span>
+                </div>
+                {/* 57% tick → position: (100-57)/(100-33) = 64.18% */}
+                <div className="absolute flex flex-col items-center" style={{ left: '64.18%', transform: 'translateX(-50%)' }}>
+                  <div className="w-px h-3 bg-black/70"></div>
+                  <span className="text-[9px] font-medium text-gray-600 mt-0.5">57.9%</span>
+                </div>
+              </div>
+
+              {/* Edge labels */}
+              <div className="absolute top-5 left-0 right-0 flex justify-between text-[9px] text-gray-400">
+                <span>100%</span>
+                <span>33%</span>
+              </div>
             </div>
           </div>
 
