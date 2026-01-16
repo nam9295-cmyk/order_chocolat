@@ -5,7 +5,7 @@ const BASE_PRICES = {
   high: 8000, // 85-100
   mid: 7000,  // 65-84
   low: 6500,  // 45-64
-  milk: 6000, // 33-44
+  milk: 7000, // 33-44
 };
 
 const SIZE_ADDONS = {
