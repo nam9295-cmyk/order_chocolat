@@ -9,14 +9,13 @@ const BASE_PRICES = {
 };
 
 const SIZE_ADDONS = {
-  S: 0,
-  M: 500,
-  L: 1000,
-  XL: 1500,
+  M: 0,
+  L: 500,
+  XL: 1000,
 };
 
 const ICE_ADDON = 1000;
-const TOPPING_ADDON = 500;
+const TOPPING_ADDON = 0;
 
 // Image Path Mapping (String Only - No Imports)
 const IMAGE_PATHS = {
@@ -44,7 +43,7 @@ const IMAGE_PATHS = {
 function App() {
   const [isIced, setIsIced] = useState(false);
   const [cacao, setCacao] = useState(70);
-  const [size, setSize] = useState('L');
+  const [size, setSize] = useState('M');
   const [hasTopping, setHasTopping] = useState(false);
 
   // Helper: Get Price Base
@@ -79,11 +78,10 @@ function App() {
   // Helper: Scale Calc
   const getScale = (sz) => {
     switch (sz) {
-      case 'S': return 0.8;
-      case 'M': return 0.9;
-      case 'L': return 1.0;
-      case 'XL': return 1.1;
-      default: return 1.0;
+      case 'M': return 1.2;
+      case 'L': return 1.35;
+      case 'XL': return 1.5;
+      default: return 1.2;
     }
   };
 
@@ -183,29 +181,7 @@ function App() {
             </div>
           </div>
 
-          {/* ④ Size Selector */}
-          <div>
-            <p className="text-xs font-bold text-gray-500 mb-2">사이즈</p>
-            <div className="grid grid-cols-4 gap-0">
-              {['S', 'M', 'L', 'XL'].map((s, idx) => (
-                <button
-                  key={s}
-                  onClick={() => setSize(s)}
-                  className={`py-3 text-center border transition-all ${idx === 0 ? 'rounded-l-lg' : ''
-                    } ${idx === 3 ? 'rounded-r-lg border-r' : 'border-r-0'
-                    } ${size === s
-                      ? 'bg-[#4E342E] text-white border-[#4E342E] z-10'
-                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                    }`}
-                >
-                  <div className="text-sm font-bold">{s}</div>
-                  <div className="text-[10px] opacity-70">+{SIZE_ADDONS[s].toLocaleString()}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ⑤ Topping Button */}
+          {/* ④ Topping Button */}
           <div>
             <p className="text-xs font-bold text-gray-500 mb-2">토핑 추가</p>
             <button
@@ -215,9 +191,34 @@ function App() {
                 : 'bg-white text-gray-600 border-gray-300 hover:border-[#4E342E]'
                 }`}
             >
-              <span className="font-bold text-sm">🍫 초콜릿 토핑</span>
-              <span className={`text-sm font-bold ${hasTopping ? 'text-[#FFCC80]' : 'text-[#D2691E]'}`}>+500원</span>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm">🍫 초콜릿 토핑</span>
+                <span className="bg-[#D84315] text-white text-[10px] px-1.5 py-0.5 rounded font-bold">추천</span>
+              </div>
+              <span className={`text-sm font-bold ${hasTopping ? 'text-[#FFCC80]' : 'text-green-600'}`}>FREE</span>
             </button>
+          </div>
+
+          {/* ⑤ Size Selector */}
+          <div>
+            <p className="text-xs font-bold text-gray-500 mb-2">사이즈</p>
+            <div className="grid grid-cols-3 gap-0">
+              {['M', 'L', 'XL'].map((s, idx) => (
+                <button
+                  key={s}
+                  onClick={() => setSize(s)}
+                  className={`py-3 text-center border transition-all ${idx === 0 ? 'rounded-l-lg' : ''
+                    } ${idx === 2 ? 'rounded-r-lg border-r' : 'border-r-0'
+                    } ${size === s
+                      ? 'bg-[#4E342E] text-white border-[#4E342E] z-10'
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                >
+                  <div className="text-sm font-bold">{s}</div>
+                  <div className="text-[10px] opacity-70">{SIZE_ADDONS[s] === 0 ? '기본' : `+${SIZE_ADDONS[s].toLocaleString()}`}</div>
+                </button>
+              ))}
+            </div>
           </div>
 
         </div>
