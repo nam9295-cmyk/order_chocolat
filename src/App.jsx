@@ -45,6 +45,8 @@ function App() {
   const [cacao, setCacao] = useState(70);
   const [size, setSize] = useState('M');
   const [hasTopping, setHasTopping] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   // Helper: Get Price Base
   const getCacaoPrice = (val) => {
@@ -82,6 +84,25 @@ function App() {
       case 'L': return 1.35;
       case 'XL': return 1.5;
       default: return 1.2;
+    }
+  };
+
+  // Helper: Get order text for clipboard
+  const getOrderText = () => {
+    const temp = isIced ? 'ICED' : 'HOT';
+    const concentration = cacao < 45 ? 'MILK' : `카카오 ${cacao}%`;
+    const toppingText = hasTopping ? ' / 토핑추가' : '';
+    return `[베리굿 주문] ${temp} / ${concentration} / 사이즈 ${size}${toppingText} - 총 ${totalPrice.toLocaleString()}원`;
+  };
+
+  // Handle copy to clipboard
+  const handleCopyOrder = async () => {
+    try {
+      await navigator.clipboard.writeText(getOrderText());
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    } catch (err) {
+      alert('복사에 실패했습니다.');
     }
   };
 
@@ -229,12 +250,121 @@ function App() {
             <span className="text-sm text-gray-500">총 금액</span>
             <span className="text-2xl font-extrabold text-[#4E342E]">{totalPrice.toLocaleString()}원</span>
           </div>
-          <button className="w-full py-4 bg-[#D84315] hover:bg-[#BF360C] text-white font-bold text-lg rounded-xl transition-colors shadow-lg">
+          <button
+            onClick={() => setShowModal(true)}
+            className="w-full py-4 bg-[#D84315] hover:bg-[#BF360C] text-white font-bold text-lg rounded-xl transition-colors shadow-lg"
+          >
             담기
           </button>
         </div>
 
+        {/* Order Confirmation Modal - Receipt Style */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50 p-4">
+            {/* Receipt Paper */}
+            <div className="relative w-full max-w-xs drop-shadow-2xl my-4">
+
+              {/* Receipt Body with zigzag edges via CSS */}
+              <div className="receipt-box px-6 py-6 font-mono text-black">
+
+                {/* Logo */}
+                <div className="text-center mb-4">
+                  <h1 className="text-2xl font-black tracking-tighter leading-none">VERY GOOD</h1>
+                  <h2 className="text-lg font-bold tracking-tight">CHOCOLATE</h2>
+                </div>
+
+                {/* Dashed Divider */}
+                <div className="border-t-2 border-dashed border-black my-3"></div>
+
+                {/* Order Info */}
+                <div className="text-xs text-center mb-3">
+                  <p>주문 내역 확인</p>
+                  <p className="text-[10px] opacity-60">{new Date().toLocaleString('ko-KR')}</p>
+                </div>
+
+                {/* Dashed Divider */}
+                <div className="border-t-2 border-dashed border-black my-3"></div>
+
+                {/* Items */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>온도</span>
+                    <span className="font-bold">{isIced ? 'ICED' : 'HOT'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>카카오</span>
+                    <span className="font-bold">{cacao < 45 ? 'MILK' : `${cacao}%`}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>사이즈</span>
+                    <span className="font-bold">{size}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>토핑</span>
+                    <span className="font-bold">{hasTopping ? 'O' : 'X'}</span>
+                  </div>
+                </div>
+
+                {/* Dashed Divider */}
+                <div className="border-t-2 border-dashed border-black my-3"></div>
+
+                {/* Total */}
+                <div className="flex justify-between items-center text-lg font-black">
+                  <span>TOTAL</span>
+                  <span>{totalPrice.toLocaleString()}원</span>
+                </div>
+
+                {/* Dashed Divider */}
+                <div className="border-t-2 border-dashed border-black my-3"></div>
+
+                {/* Message */}
+                <p className="text-center text-[10px] opacity-60 mb-4">
+                  직원에게 이 화면을 보여주세요
+                </p>
+
+                {/* Fake Barcode */}
+                <div className="flex justify-center items-end gap-[1px] h-8 mb-2">
+                  {[2, 1, 3, 1, 2, 1, 1, 3, 2, 1, 2, 1, 3, 1, 2, 3, 1, 2, 1, 1, 2, 3, 1, 2, 1, 3, 2, 1, 1, 2].map((w, i) => (
+                    <div
+                      key={i}
+                      className="bg-black"
+                      style={{ width: `${w}px`, height: `${12 + (i % 3) * 4}px` }}
+                    />
+                  ))}
+                </div>
+                <p className="text-center text-[8px] font-bold tracking-widest">
+                  {String(Date.now()).slice(-12)}
+                </p>
+
+              </div>
+            </div>
+
+            {/* Buttons Outside Receipt */}
+            <div className="flex gap-3 mt-6 w-full max-w-xs">
+              <button
+                onClick={handleCopyOrder}
+                className="flex-1 py-3 bg-white text-black font-mono font-bold text-sm rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                📋 복사
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 py-3 bg-black text-white font-mono font-bold text-sm rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Toast Notification */}
+        {showToast && (
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-[#4E342E] text-white px-6 py-3 rounded-full shadow-lg z-50 animate-bounce">
+            ✅ 복사되었습니다!
+          </div>
+        )}
       </div>
+
     </div>
   );
 }

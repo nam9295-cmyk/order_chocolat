@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* 영수증 스타일 - 심플한 네모 */
+.receipt-box {
+    background-color: white;
+    border-radius: 8px;
+}
