@@ -86,9 +86,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#4E342E] to-[#3E2723] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#edc5c4] flex items-center justify-center p-4">
       {/* Kiosk Card Container */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col" style={{ maxHeight: '90vh' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col" style={{ maxHeight: '95vh' }}>
 
         {/* ① Image Area */}
         <div className="bg-gradient-to-b from-[#EFEBE9] to-[#D7CCC8] p-4 flex items-center justify-center h-64 relative">
