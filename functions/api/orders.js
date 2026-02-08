@@ -1,11 +1,5 @@
-const SIZE_ADDONS = {
-  M: 0,
-  L: 500,
-  XL: 1000,
-};
-
 const ICE_ADDON = 700;
-const TOPPING_ADDON = 0;
+const SHOT_ADDON = 500;
 
 const BASE_PRICES = {
   '100': 8300,
@@ -55,13 +49,13 @@ export async function onRequestPost(context) {
     return jsonResponse({ message: 'Invalid JSON body' }, 400);
   }
 
-  const { cacao, isIced, size, hasTopping } = payload || {};
+  const { cacao, isIced, shotCount, hasTopping } = payload || {};
 
-  const { label: cacaoNormalized, price: basePrice } = normalizeCacao(cacao);
-  const sizeAddon = SIZE_ADDONS[size] ?? 0;
+  const { price: basePrice } = normalizeCacao(cacao);
+  const normalizedShotCount = Number(shotCount) === 1 ? 1 : 0;
   const iceAddon = isIced ? ICE_ADDON : 0;
-  const toppingAddon = hasTopping ? TOPPING_ADDON : 0;
-  const price = basePrice + sizeAddon + iceAddon + toppingAddon;
+  const shotAddon = normalizedShotCount * SHOT_ADDON;
+  const price = basePrice + iceAddon + shotAddon;
 
   const now = Date.now();
   const expiresAt = now + 10 * 60 * 1000;
@@ -69,9 +63,9 @@ export async function onRequestPost(context) {
 
   const record = {
     orderId,
-    cacaoNormalized,
+    cacao: Number(cacao),
     isIced: Boolean(isIced),
-    size: typeof size === 'string' ? size : 'M',
+    shotCount: normalizedShotCount,
     hasTopping: Boolean(hasTopping),
     price,
     status: 'PENDING',
@@ -80,7 +74,7 @@ export async function onRequestPost(context) {
   };
 
   try {
-    await env.ORDERS_KV.put(orderId, JSON.stringify(record));
+    await env.ORDERS_KV.put(orderId, JSON.stringify(record), { expirationTtl: 600 });
   } catch {
     return jsonResponse({ message: 'Failed to store order' }, 500);
   }

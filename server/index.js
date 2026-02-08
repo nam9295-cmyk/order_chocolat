@@ -8,13 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const STORE_PATH = path.join(__dirname, 'orders.store.json');
 
-const SIZE_ADDONS = {
-  M: 0,
-  L: 500,
-  XL: 1000,
-};
-
 const ICE_ADDON = 700;
+const SHOT_ADDON = 500;
 const TOPPING_ADDON = 0;
 
 const BASE_PRICES = {
@@ -72,13 +67,14 @@ const app = express();
 app.use(express.json({ limit: '50kb' }));
 
 app.post('/api/orders', async (req, res) => {
-  const { cacao, isIced, size, hasTopping } = req.body || {};
+  const { cacao, isIced, shotCount, hasTopping } = req.body || {};
 
   const { label: cacaoNormalized, price: basePrice } = normalizeCacao(cacao);
-  const sizeAddon = SIZE_ADDONS[size] ?? 0;
+  const normalizedShotCount = Number(shotCount) === 1 ? 1 : 0;
   const iceAddon = isIced ? ICE_ADDON : 0;
+  const shotAddon = normalizedShotCount * SHOT_ADDON;
   const toppingAddon = hasTopping ? TOPPING_ADDON : 0;
-  const price = basePrice + sizeAddon + iceAddon + toppingAddon;
+  const price = basePrice + iceAddon + shotAddon + toppingAddon;
 
   const now = Date.now();
   const expiresAt = now + 10 * 60 * 1000;
@@ -88,7 +84,7 @@ app.post('/api/orders', async (req, res) => {
     orderId,
     cacaoNormalized,
     isIced: Boolean(isIced),
-    size: typeof size === 'string' ? size : 'M',
+    shotCount: normalizedShotCount,
     hasTopping: Boolean(hasTopping),
     price,
     status: 'PENDING',

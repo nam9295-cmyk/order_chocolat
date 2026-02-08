@@ -10,13 +10,8 @@ const BASE_PRICES = {
   milk: 6800, // <45 treated as MILK
 };
 
-const SIZE_ADDONS = {
-  M: 0,
-  L: 500,
-  XL: 1000,
-};
-
 const ICE_ADDON = 700;
+const SHOT_ADDON = 500;
 const TOPPING_ADDON = 0;
 
 // Image Path Mapping (String Only - No Imports)
@@ -45,7 +40,7 @@ const IMAGE_PATHS = {
 function App() {
   const [isIced, setIsIced] = useState(false);
   const [cacao, setCacao] = useState(70);
-  const [size, setSize] = useState('M');
+  const [shotCount, setShotCount] = useState(0);
   const [hasTopping, setHasTopping] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -70,8 +65,8 @@ function App() {
   // Helper: Total Price Calc
   const totalPrice =
     getCacaoPrice(cacao) +
-    SIZE_ADDONS[size] +
     (isIced ? ICE_ADDON : 0) +
+    (shotCount * SHOT_ADDON) +
     (hasTopping ? TOPPING_ADDON : 0);
 
   // Helper: Get Liquid Image Path (String)
@@ -88,22 +83,15 @@ function App() {
     return iced ? IMAGE_PATHS.cup.ice : IMAGE_PATHS.cup.hot;
   };
 
-  // Helper: Scale Calc
-  const getScale = (sz) => {
-    switch (sz) {
-      case 'M': return 1.2;
-      case 'L': return 1.35;
-      case 'XL': return 1.5;
-      default: return 1.2;
-    }
-  };
+  const getScale = () => 1.2;
 
   // Helper: Get order text for clipboard
   const getOrderText = () => {
     const temp = isIced ? 'ICED' : 'HOT';
     const concentration = cacao < 45 ? 'MILK' : `카카오 ${getCacaoLabel(cacao)}`;
+    const shotText = shotCount > 0 ? ` / 샷 ${shotCount}` : '';
     const toppingText = hasTopping ? ' / 토핑추가' : '';
-    return `[베리굿 주문] ${temp} / ${concentration} / 사이즈 ${size}${toppingText} - 총 ${totalPrice.toLocaleString()}원`;
+    return `[베리굿 주문] ${temp} / ${concentration}${shotText}${toppingText} - 총 ${totalPrice.toLocaleString()}원`;
   };
 
   // Handle copy to clipboard
@@ -122,7 +110,7 @@ function App() {
     setIsCreating(true);
     setCreateError('');
     try {
-      const result = await createOrder({ cacao, isIced, size, hasTopping });
+      const result = await createOrder({ cacao, isIced, shotCount, hasTopping });
       setOrderResult(result);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'QR 생성에 실패했습니다.');
@@ -155,14 +143,14 @@ function App() {
         <div className="bg-gradient-to-b from-[#EFEBE9] to-[#D7CCC8] p-4 flex items-center justify-center h-64 relative">
           <div
             className="relative w-48 h-56 transition-transform duration-300"
-            style={{ transform: `scale(${getScale(size)})` }}
+            style={{ transform: `scale(${getScale()})` }}
           >
             <img src={getCupPath(isIced)} alt="Cup" className={`absolute inset-0 w-full h-full object-contain ${isIced ? 'z-10' : 'z-0'}`} />
             <img src={getLiquidPath(cacao, isIced)} alt="Liquid" className={`absolute inset-0 w-full h-full object-contain ${isIced ? 'z-0' : 'z-10'}`} />
             {hasTopping && <img src="/images/choco_t.png" alt="Topping" className="absolute inset-0 w-full h-full object-contain z-20" />}
           </div>
           <div className="absolute top-2 right-2 bg-white/80 px-2 py-1 rounded text-xs font-bold text-[#4E342E]">
-            {isIced ? 'ICED' : 'HOT'} · {getCacaoLabel(cacao)} · {size}
+            {isIced ? 'ICED' : 'HOT'} · {getCacaoLabel(cacao)} · SHOT {shotCount}
           </div>
         </div>
 
@@ -260,26 +248,21 @@ function App() {
             </button>
           </div>
 
-          {/* ⑤ Size Selector */}
+          {/* ⑤ Shot Toggle */}
           <div>
-            <p className="text-xs font-bold text-gray-500 mb-2">사이즈</p>
-            <div className="grid grid-cols-3 gap-0">
-              {['M', 'L', 'XL'].map((s, idx) => (
-                <button
-                  key={s}
-                  onClick={() => setSize(s)}
-                  className={`py-3 text-center border transition-all ${idx === 0 ? 'rounded-l-lg' : ''
-                    } ${idx === 2 ? 'rounded-r-lg border-r' : 'border-r-0'
-                    } ${size === s
-                      ? 'bg-[#4E342E] text-white border-[#4E342E] z-10'
-                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                    }`}
-                >
-                  <div className="text-sm font-bold">{s}</div>
-                  <div className="text-[10px] opacity-70">{SIZE_ADDONS[s] === 0 ? '기본' : `+${SIZE_ADDONS[s].toLocaleString()}`}</div>
-                </button>
-              ))}
-            </div>
+            <p className="text-xs font-bold text-gray-500 mb-2">샷 추가</p>
+            <button
+              onClick={() => setShotCount(shotCount === 0 ? 1 : 0)}
+              className={`w-full py-3 rounded-lg border-2 transition-all flex items-center justify-between px-4 ${shotCount === 1
+                ? 'bg-[#4E342E] text-white border-[#4E342E]'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-[#4E342E]'
+                }`}
+            >
+              <span className="font-bold text-sm">샷 추가 +500</span>
+              <span className={`text-sm font-bold ${shotCount === 1 ? 'text-[#FFCC80]' : 'text-gray-500'}`}>
+                {shotCount === 1 ? 'ON' : 'OFF'}
+              </span>
+            </button>
           </div>
 
         </div>
@@ -336,8 +319,8 @@ function App() {
                     <span className="font-bold">{getCacaoLabel(cacao)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>사이즈</span>
-                    <span className="font-bold">{size}</span>
+                    <span>샷</span>
+                    <span className="font-bold">{shotCount}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>토핑</span>
