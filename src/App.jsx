@@ -107,6 +107,10 @@ function App() {
 
   const handleCreateQr = async () => {
     if (isCreating) return;
+    if (orderResult) {
+      const confirmed = window.confirm('정말 다시 생성하시겠습니까?');
+      if (!confirmed) return;
+    }
     setIsCreating(true);
     setCreateError('');
     try {
@@ -283,12 +287,12 @@ function App() {
 
         {/* Order Confirmation Modal - Receipt Style */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-start z-50 p-4 overflow-y-auto">
             {/* Receipt Paper */}
             <div className="relative w-full max-w-xs drop-shadow-2xl my-4">
 
               {/* Receipt Body with zigzag edges via CSS */}
-              <div className="receipt-box px-6 py-6 font-mono text-black">
+              <div className="receipt-box px-6 py-6 font-mono text-black max-h-[70vh] overflow-y-auto">
 
                 {/* Logo */}
                 <div className="text-center mb-4">
@@ -377,7 +381,7 @@ function App() {
             </div>
 
             {/* Buttons Outside Receipt */}
-            <div className="flex gap-3 mt-6 w-full max-w-xs">
+            <div className="flex gap-3 mt-4 w-full max-w-xs">
               <button
                 onClick={handleCopyOrder}
                 className="flex-1 py-3 bg-white text-black font-mono font-bold text-sm rounded-lg hover:bg-gray-100 transition-colors"
