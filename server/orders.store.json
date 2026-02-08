@@ -130,5 +130,16 @@
     "status": "PENDING",
     "createdAt": 1770555020517,
     "expiresAt": 1770555620517
+  },
+  {
+    "orderId": "VG-7EGUPXLW",
+    "cacaoNormalized": "70.5",
+    "isIced": false,
+    "shotCount": 0,
+    "hasTopping": false,
+    "price": 7300,
+    "status": "PENDING",
+    "createdAt": 1770556030875,
+    "expiresAt": 1770556630875
   }
 ]
