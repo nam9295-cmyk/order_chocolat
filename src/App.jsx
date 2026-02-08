@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import OrderQr from './components/OrderQr.jsx';
+import { createOrder } from './api/orders.js';
 
 // Pricing Constants
 const BASE_PRICES = {
-  high: 8000, // 85-100
-  mid: 7000,  // 65-84
-  low: 6500,  // 45-64
-  milk: 7000, // 33-44
+  100: 8300,  // 85+ treated as 100
+  70: 7300,   // 70 treated as 70.5
+  57: 6800,   // 57 treated as 57.9
+  milk: 6800, // <45 treated as MILK
 };
 
 const SIZE_ADDONS = {
@@ -14,7 +16,7 @@ const SIZE_ADDONS = {
   XL: 1000,
 };
 
-const ICE_ADDON = 1000;
+const ICE_ADDON = 700;
 const TOPPING_ADDON = 0;
 
 // Image Path Mapping (String Only - No Imports)
@@ -47,13 +49,22 @@ function App() {
   const [hasTopping, setHasTopping] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [orderResult, setOrderResult] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
 
-  // Helper: Get Price Base
   const getCacaoPrice = (val) => {
-    if (val >= 85) return BASE_PRICES.high;
-    if (val >= 65) return BASE_PRICES.mid;
-    if (val >= 45) return BASE_PRICES.low;
+    if (val >= 85) return BASE_PRICES[100];
+    if (val >= 65) return BASE_PRICES[70];
+    if (val >= 45) return BASE_PRICES[57];
     return BASE_PRICES.milk;
+  };
+
+  const getCacaoLabel = (val) => {
+    if (val >= 85) return '100%';
+    if (val >= 65) return val === 70 ? '70.5%' : `${val}%`;
+    if (val >= 45) return val === 57 ? '57.9%' : `${val}%`;
+    return 'MILK';
   };
 
   // Helper: Total Price Calc
@@ -90,7 +101,7 @@ function App() {
   // Helper: Get order text for clipboard
   const getOrderText = () => {
     const temp = isIced ? 'ICED' : 'HOT';
-    const concentration = cacao < 45 ? 'MILK' : `카카오 ${cacao}%`;
+    const concentration = cacao < 45 ? 'MILK' : `카카오 ${getCacaoLabel(cacao)}`;
     const toppingText = hasTopping ? ' / 토핑추가' : '';
     return `[베리굿 주문] ${temp} / ${concentration} / 사이즈 ${size}${toppingText} - 총 ${totalPrice.toLocaleString()}원`;
   };
@@ -104,6 +115,35 @@ function App() {
     } catch (err) {
       alert('복사에 실패했습니다.');
     }
+  };
+
+  const handleCreateQr = async () => {
+    if (isCreating) return;
+    setIsCreating(true);
+    setCreateError('');
+    try {
+      const result = await createOrder({ cacao, isIced, size, hasTopping });
+      setOrderResult(result);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'QR 생성에 실패했습니다.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleOpenModal = () => {
+    setOrderResult(null);
+    setCreateError('');
+    setIsCreating(false);
+    setShowModal(true);
+    handleCreateQr();
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setOrderResult(null);
+    setCreateError('');
+    setIsCreating(false);
   };
 
   return (
@@ -122,7 +162,7 @@ function App() {
             {hasTopping && <img src="/images/choco_t.png" alt="Topping" className="absolute inset-0 w-full h-full object-contain z-20" />}
           </div>
           <div className="absolute top-2 right-2 bg-white/80 px-2 py-1 rounded text-xs font-bold text-[#4E342E]">
-            {isIced ? 'ICED' : 'HOT'} · {cacao < 45 ? 'MILK' : `${cacao}%`} · {size}
+            {isIced ? 'ICED' : 'HOT'} · {getCacaoLabel(cacao)} · {size}
           </div>
         </div>
 
@@ -149,7 +189,7 @@ function App() {
                   : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'
                   }`}
               >
-                ❄️ ICED +1,000
+                ❄️ ICED +700
               </button>
             </div>
           </div>
@@ -158,7 +198,7 @@ function App() {
           <div>
             <div className="flex justify-between items-center mb-2">
               <p className="text-xs font-bold text-gray-500">카카오 농도</p>
-              <span className="text-sm font-extrabold text-[#4E342E]">{cacao < 45 ? 'MILK' : `${cacao}%`}</span>
+              <span className="text-sm font-extrabold text-[#4E342E]">{getCacaoLabel(cacao)}</span>
             </div>
 
             {/* Slider with Tick Marks */}
@@ -251,7 +291,7 @@ function App() {
             <span className="text-2xl font-extrabold text-[#4E342E]">{totalPrice.toLocaleString()}원</span>
           </div>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={handleOpenModal}
             className="w-full py-4 bg-[#D84315] hover:bg-[#BF360C] text-white font-bold text-lg rounded-xl transition-colors shadow-lg"
           >
             담기
@@ -293,7 +333,7 @@ function App() {
                   </div>
                   <div className="flex justify-between">
                     <span>카카오</span>
-                    <span className="font-bold">{cacao < 45 ? 'MILK' : `${cacao}%`}</span>
+                    <span className="font-bold">{getCacaoLabel(cacao)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>사이즈</span>
@@ -322,19 +362,33 @@ function App() {
                   직원에게 이 화면을 보여주세요
                 </p>
 
-                {/* Fake Barcode */}
-                <div className="flex justify-center items-end gap-[1px] h-8 mb-2">
-                  {[2, 1, 3, 1, 2, 1, 1, 3, 2, 1, 2, 1, 3, 1, 2, 3, 1, 2, 1, 1, 2, 3, 1, 2, 1, 3, 2, 1, 1, 2].map((w, i) => (
-                    <div
-                      key={i}
-                      className="bg-black"
-                      style={{ width: `${w}px`, height: `${12 + (i % 3) * 4}px` }}
-                    />
-                  ))}
-                </div>
-                <p className="text-center text-[8px] font-bold tracking-widest">
-                  {String(Date.now()).slice(-12)}
-                </p>
+                {createError && (
+                  <p className="text-center text-xs text-red-600 mb-2">{createError}</p>
+                )}
+
+                {orderResult ? (
+                  <OrderQr
+                    orderId={orderResult.orderId}
+                    price={orderResult.price}
+                    expiresAt={orderResult.expiresAt}
+                  />
+                ) : (
+                  <>
+                    {/* Fake Barcode */}
+                    <div className="flex justify-center items-end gap-[1px] h-8 mb-2">
+                      {[2, 1, 3, 1, 2, 1, 1, 3, 2, 1, 2, 1, 3, 1, 2, 3, 1, 2, 1, 1, 2, 3, 1, 2, 1, 3, 2, 1, 1, 2].map((w, i) => (
+                        <div
+                          key={i}
+                          className="bg-black"
+                          style={{ width: `${w}px`, height: `${12 + (i % 3) * 4}px` }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-center text-[8px] font-bold tracking-widest">
+                      {String(Date.now()).slice(-12)}
+                    </p>
+                  </>
+                )}
 
               </div>
             </div>
@@ -348,7 +402,18 @@ function App() {
                 📋 복사
               </button>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleCreateQr}
+                disabled={isCreating}
+                className={`flex-1 py-3 font-mono font-bold text-sm rounded-lg transition-colors ${
+                  isCreating
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : 'bg-[#D84315] text-white hover:bg-[#BF360C]'
+                }`}
+              >
+                {isCreating ? '생성 중…' : 'QR 생성'}
+              </button>
+              <button
+                onClick={handleCloseModal}
                 className="flex-1 py-3 bg-black text-white font-mono font-bold text-sm rounded-lg hover:bg-gray-800 transition-colors"
               >
                 닫기
